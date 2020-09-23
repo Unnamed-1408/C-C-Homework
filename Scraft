@@ -1,0 +1,626 @@
+#include <iostream>
+#include <string>
+#include<cstring>
+#include<algorithm>
+
+
+using namespace std;
+void push(char a);
+void pop();
+void storage(string inital);
+int priority(char in);
+bool check_priority(char input , char yuan);
+bool isclear();
+void meet_brackets();
+int find_comma(string a);
+string pre_subtraction(string a , string b);
+string pre_add(string a , string b);
+int find_comma(string* a);
+void add_back_zero(string* a);
+void add_front_zero(string* a);
+string start_add(string a , string b , int Aptr , int Bptr , string addoutput);
+string addition(string a , string b);
+string start_subtraction(string a , string b , int Aptr , int Bptr , string addoutput);
+string substraction(string a , string b);
+string ans_pop();
+void calculate();
+string split_flow(char a);
+void ans_psuh(string a);
+string martix(const char *first ,const char *second ,int lengtha ,int lengthb);
+string multiply_addition(int **New , int lengtha , int lengthb);
+int find_comma(string* a);
+void remove_comma(string* a , int ptr);
+void add_comma(string* a ,int ptr);
+string ready_multiply(string a , string b);
+string pre_multiply(string a , string b);
+
+
+
+int flag_brackets = -1;
+string output = "";
+char stack[100];
+int stackptr = 0;//zhi xiang yi ge kong zhan zheng
+string anstack[100];
+int ans_stackptr = 0;
+
+
+
+int main()
+{
+    string bc = "";
+    cin >> bc;
+    bc = " "+bc;
+    storage(bc);
+    cout << output;
+    calculate();
+    cout<<anstack[ans_stackptr-1];
+}
+
+void pre_process_input_string(string* a){
+    int ptr = 0;
+    while(ptr != (*a).length()){
+        if((*a).at(ptr) == '*'|'/'|'+'|'-'){
+
+        }
+
+    }
+
+}
+
+/*void pre_prosess(string a){
+    int ptr = 0;
+    while(ptr != a.length()){
+
+        if(a.at(ptr) == '-'){
+            a.insert(ptr-1,"0");
+        }
+
+        int temp = ptr-1;
+        while(a.at(temp) == ' '){
+            if(isdigit(a.at(temp))){
+
+
+            }
+        }
+        ptr++;
+    }
+}
+
+*/
+
+
+void storage(string inital){
+    int ptr = 0;
+    while(ptr != inital.length()){
+
+        if(isdigit(inital.at(ptr)) || inital.at(ptr) == '.' || inital.at(ptr) == ' '){
+            output+=inital.at(ptr);
+        }
+        else{
+            output+=" ";
+            push(inital.at(ptr));
+        }
+        ptr++;
+    }
+    output+=" ";
+    while(isclear() == false){
+        pop();
+    }
+
+}
+
+void push(char a){
+        if(a == ')'){
+            while(flag_brackets == -1){
+                meet_brackets();
+            }
+            flag_brackets = -1;
+        }
+        else{
+              while(check_priority(a , stack[stackptr-1]) == false && stack[stackptr-1] != '('){
+                 pop();
+             }
+             stack[stackptr] = a;
+             stackptr++;
+        }
+}
+
+void pop(){
+
+    if(stack[stackptr-1] != '('){
+        output+=stack[stackptr-1];
+        output+=" ";
+    }
+    else {
+        flag_brackets = 1;
+    }
+    stackptr--;
+}
+
+
+bool check_priority(char input , char yuan){
+    if(priority(input) > priority(yuan)){
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+
+int priority(char in){
+    switch (in) {
+        case '+' : return 0; break;
+        case '-' : return 0; break;
+        case '*' : return 1; break;
+        case '/' : return 1; break;
+        case '(' : return 2; break;
+        default: return -1;
+    }
+}
+
+bool isclear(){
+    if(stackptr != 0){
+        return false;
+    }
+    else {
+        return true;
+    }
+
+}
+
+void meet_brackets(){
+    pop();
+}
+
+void calculate(){
+
+    int ptr = 0;
+    int last = 0;
+    while(ptr != output.length()){
+
+        while(output.at(ptr) == ' '){
+            ptr++;
+            if(ptr == output.length()){
+                return;
+            }
+        }
+        last = ptr;
+
+        if( isdigit(output.at(ptr)) ){
+
+            while(isdigit(output.at(ptr)) || output.at(ptr) == '.'){
+                  ptr++;
+                  if(ptr == output.length()){
+                      break;
+                  }
+            }
+
+            anstack[ans_stackptr] = output.substr(last , ptr-last);
+            cout << anstack[ans_stackptr] <<" ";
+            ans_stackptr++;
+        }
+        else{
+            ans_psuh(split_flow(output.at(ptr)));
+            ptr++;
+
+        }
+
+    }
+}
+
+string split_flow(char a){
+    switch (a) {
+        case '+' : return pre_add(ans_pop() , ans_pop());
+        case '-' : return pre_subtraction(ans_pop() , ans_pop());
+        case '*' : return pre_multiply(ans_pop() , ans_pop());
+    }
+
+
+}
+
+string ans_pop(){
+
+    ans_stackptr--;
+
+    return anstack[ans_stackptr];
+
+}
+
+void ans_psuh(string a){
+    anstack[ans_stackptr] = a;
+    ans_stackptr++;
+}
+
+string pre_add(string a , string b){
+    if(a.at(0) == '-' && b.at(0) == '-'){
+        string temp = "";
+        temp = addition(a.substr(1) , b.substr(1));
+        return '-'+temp;
+    }
+    if(a.at(0) == '-' || b.at(0) == '-'){
+
+        if(a.at(0) == '-'){
+            return pre_subtraction(b , a.substr(1));
+        }
+        else {
+            return pre_subtraction(a , b.substr(1));
+        }
+
+    }
+    else {
+        return addition(a , b);
+    }
+
+}
+
+
+string pre_subtraction(string a , string b){
+
+    if(a.at(0) == '-' && b.at(0) == '-'){
+        string temp = "";
+        temp = substraction(a.substr(1) , b.substr(1));
+        return '-'+temp;
+    }
+    if(a.at(0) == '-' || b.at(0) == '-'){
+
+        if(a.at(0) == '-'){
+            return pre_add(a , '-'+b);
+        }
+        else {
+            return pre_add(a , b.substr(1));
+        }
+    }
+    else {
+        return substraction(a , b);
+    }
+
+}
+
+string pre_multiply(string a , string b){
+
+    if((a.at(0) == '-' && b.at(0) == '-') || (a.at(0) != '-' && b.at(0) != '-')){
+        return ready_multiply(a , b);
+    }
+    else {
+
+            if(a.at(0) == '-'){
+                return '-' + ready_multiply(a.substr(1) , b);
+            }
+            else {
+                return '-' + ready_multiply(a , b.substr(1));
+            }
+    }
+
+
+}
+
+string ready_multiply(string a , string b){
+
+    int Aptr = find_comma(&a);
+    int Bptr = find_comma(&b);
+
+    int o_lengtha = a.length();
+    int o_lengthb = b.length();
+
+    remove_comma(&a , Aptr);
+    remove_comma(&b , Bptr);
+    int last = o_lengtha-Aptr + o_lengthb-Bptr ;
+
+    int lengtha = a.length();
+    int lengthb = b.length();
+
+    reverse(b.begin(),b.end());
+
+    const char *first = a.c_str();
+    const char *second = b.c_str();
+//    int **New = martix(first , second , lengtha , lengthb);
+    string output_multiply = martix(first , second , lengtha , lengthb);
+    add_comma(&output_multiply , last);
+    if(output_multiply.at(0) == '0'){
+        output_multiply = output_multiply.substr(1);
+    }
+
+    return output_multiply;
+
+}
+
+
+
+//加法计算器
+string addition(string a , string b){
+    int Aptr = find_comma(&a);
+    int Bptr = find_comma(&b);
+    string addoutput = "";
+
+    return start_add(a , b , Aptr , Bptr , addoutput);
+}
+
+
+int find_comma(string* a){
+
+    int temptr = 0;
+
+    while(temptr != (*a).length()){
+
+        if((*a).at(temptr) == '.'){
+            return temptr;
+        }
+        temptr++;
+    }
+
+    (*a) += '.';
+    return temptr;
+
+}
+
+string start_add(string a , string b , int Aptr , int Bptr , string addoutput){
+//    int tempa = Aptr;
+//    int tempb = Bptr;
+    int forward = 0;
+
+    if(a.length()-Aptr > b.length()-Bptr){
+        while(a.length()-Aptr != b.length()-Bptr){
+            add_back_zero(&b);
+        }
+    }
+    else {
+        while(a.length()-Aptr != b.length()-Bptr){
+            add_back_zero(&a);
+        }
+    }//back zero add
+
+    if(Aptr > Bptr){
+        while(Aptr != Bptr){
+            add_front_zero(&b);
+                Bptr++;
+        }
+    }
+    else {
+        while(Aptr != Bptr){
+            add_front_zero(&a);
+            Aptr++;
+        }
+    }
+
+    if(a.length() == b.length()){
+        cout << "well done!";
+    }
+
+    int temp = a.length()-1;
+
+    while(temp != -1){
+
+        if(a.at(temp) == '.'){
+            addoutput = '.' + addoutput;
+            temp--;
+        }
+        else{
+         int abc = a.at(temp)-'0' + b.at(temp) - '0' + forward;
+         int now = abc%10;
+         addoutput = (char)(now + '0') + addoutput;
+         forward = abc/10;
+         temp--;
+    }
+
+
+}
+    if(forward != 0){
+        addoutput = (char)(forward + '0')+addoutput;
+    }
+
+    return addoutput;
+}
+
+
+void add_back_zero(string* a){
+    (*a)+='0';
+}
+
+void add_front_zero(string* a){
+    (*a) = '0' + *a;
+}
+
+
+//end
+
+
+
+//减法计算器
+string substraction(string a , string b){
+    int Aptr = find_comma(&a);
+    int Bptr = find_comma(&b);
+    string addoutput = "";
+
+    return start_subtraction(a , b , Aptr , Bptr , addoutput);
+}
+
+
+/*int find_comma(string* a){
+
+    int temptr = 0;
+
+    while(temptr != (*a).length()){
+
+        if((*a).at(temptr) == '.'){
+            return temptr;
+        }
+        temptr++;
+    }
+
+    (*a) += '.';
+    return temptr;
+
+}
+*/
+string start_subtraction(string a , string b , int Aptr , int Bptr , string addoutput){
+//    int tempa = Aptr;
+//    int tempb = Bptr;
+    int forward = 0;
+
+    if(a.length()-Aptr > b.length()-Bptr){
+        while(a.length()-Aptr != b.length()-Bptr){
+            add_back_zero(&b);
+        }
+    }
+    else {
+        while(a.length()-Aptr != b.length()-Bptr){
+            add_back_zero(&a);
+        }
+    }//back zero add
+
+    if(Aptr > Bptr){
+        while(Aptr != Bptr){
+            add_front_zero(&b);
+                Bptr++;
+        }
+    }
+    else {
+        while(Aptr != Bptr){
+            add_front_zero(&a);
+            Aptr++;
+        }
+    }
+
+    if(a.length() == b.length()){
+        cout << "well done!";
+    }
+
+    int temp = a.length()-1;
+
+    while(temp != -1){
+
+        if(a.at(temp) == '.'){
+            addoutput = '.' + addoutput;
+            temp--;
+        }
+        else{
+         int abc = a.at(temp)-'0' - b.at(temp) + '0' + forward;
+         if(abc < 0){
+             addoutput = (char)(10 + abc + '0') + addoutput;
+             forward = -1;
+             temp--;
+         }
+         else{
+            forward = 0;
+            addoutput = (char)(abc + '0') + addoutput;
+             temp--;
+        }
+    }
+
+}
+    if(forward != 0){
+        if(forward < 0){
+            return '-' + substraction(b,a);
+        }
+        else{
+        addoutput = (char)(forward + '0')+addoutput;
+        }
+    }
+
+    return addoutput;
+}
+
+//end
+
+
+
+//乘法计算器
+string martix(const char *first ,const char *second ,int lengtha ,int lengthb){
+    int *martix[lengthb] ;
+    int count = 0 ;
+
+    while(count != lengthb){
+
+        int temp = lengtha;
+        int *tempm = new int[lengtha+1] ();
+        int forward = 0;
+        while(temp != -1){
+
+            if(temp != 0){
+
+            tempm[temp] = ((first[temp-1]-'0')*(second[count]-'0') + forward+0) % 10;
+
+            forward = (((first[temp-1]-'0')*(second[count]-'0') + forward) - tempm[temp])/10;
+        }
+            else {
+                tempm[temp] = forward ;
+
+            }
+       //     cout << tempm[temp] ;
+
+            temp--;
+
+        }
+        forward = 0;
+        martix[count] = tempm;
+        count++;
+    }
+
+    return multiply_addition( martix , lengtha , lengthb);
+}
+
+string multiply_addition(int *New[] , int lengtha , int lengthb){
+    int forward = 0;
+    string temp = "";
+    int movex = lengtha;
+    int movey = 0;
+
+    while(movex != 0 || movey != lengthb){
+        int tempx = movex;
+        int tempy = movey;
+        int total = 0;
+        int tempa = 0;
+        while(tempx != lengtha+1 && tempy != lengthb){
+
+            total += New[tempy][tempx];
+            tempx++;
+            tempy++;
+
+        }
+        if(movex != 0){
+           movex--;
+        }
+        else{
+            movey++;
+
+        }
+        tempa = total;
+        total = total+forward;
+        forward = ((tempa +forward)-(tempa +forward)%10)/10;
+        total = total%10;
+        temp+=(total+'0');
+
+    }
+
+    reverse(temp.begin(),temp.end());
+    return temp;
+
+}
+
+/*int find_comma(string* a){
+
+    int temptr = 0;
+
+    while(temptr != (*a).length()){
+
+        if((*a).at(temptr) == '.'){
+            return temptr;
+        }
+        temptr++;
+    }
+
+    (*a) += '.';
+    return temptr;
+
+}
+*/
+void remove_comma(string* a , int ptr){
+    *a = (*a).substr(0,ptr)+(*a).substr(ptr+1);
+}
+
+void add_comma(string* a ,int ptr){
+    *a = (*a).substr(0,(*a).length()-ptr+2) + '.' +(*a).substr((*a).length()-ptr+2);
+}
+
+
+//end
