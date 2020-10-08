@@ -1,0 +1,363 @@
+#include <iostream>
+#include <string>
+#include <stdio.h>
+#include <sys/time.h>
+#include <unistd.h>
+#include <fstream>
+#include <thread>
+#include <xmmintrin.h>
+#include <mutex>
+
+using namespace std;
+
+struct vector{
+    string name;
+    int length;
+    float *num;
+};
+
+
+int nums_count(string input);
+void storage_vector(string input);
+void in_storage_vector(string input);
+int search_vector(string input);
+double start_dot_product(int Aptr,int Bptr);
+void Start(string input);
+double dot_product(string input);
+void Sum(int Aptr,int Bptr,int left , int gap , double& total);
+inline double thread_dot_product(int Aptr,int Bptr);
+inline double sse_inner(const float* a, const float* b, unsigned int size);
+inline double dotProduct(float* a, float* b , unsigned int size);
+
+vector vector_storage[100];
+int vector_storage_ptr = 0;
+
+
+
+
+int main()
+{
+    ifstream fileina("1.in");
+    ifstream fileinb("2.in");
+    string a = "";
+    getline(fileina,a);
+    a = "a={"+a+"}";
+    storage_vector(a);
+//    cout << vector_storage[0].num[1] << endl;
+    string b ="";
+    getline(fileinb,b);
+    b = "b={"+b+"}";
+    storage_vector(b);
+    fileina.close();
+    fileinb.close();
+//  cout << vector_storage[0].num[1] << endl;
+//  cout << vector_storage_ptr <<endl;
+
+
+    struct timeval start;
+    struct timeval end;
+
+
+    unsigned long diff;
+    gettimeofday(&start, NULL);
+
+
+    Start("a*b");
+
+    gettimeofday(&end, NULL);
+
+
+    diff = 1000*(end.tv_sec - start.tv_sec) + end.tv_usec - start.tv_usec;
+    double time_diff = (double)diff/1000000;
+    printf("thw difference is %fs\n",time_diff);
+
+}
+
+void Start(string input){
+    int ptr = 0;
+    bool to_storage = false;
+
+    while(ptr != input.length()){
+
+        if(input.at(ptr) == '='){
+            to_storage = true;
+
+        }
+        ptr++;
+    }
+
+    if(to_storage == true){
+        storage_vector(input);
+    }
+    else{
+        cout << std::fixed <<dot_product(input) << endl;
+    }
+
+}
+
+double dot_product(string input){
+    int ptr = 0;
+
+    while(ptr != input.length()){
+        if(input.at(ptr) == '*'){
+            break;
+        }
+        ptr++;
+    }
+    int Aptr = search_vector(input.substr(0,ptr));
+    int Bptr = search_vector(input.substr(ptr+1));
+
+    if(vector_storage[Aptr].length == vector_storage[Bptr].length){
+        if(vector_storage[Aptr].length <=100000){
+            return start_dot_product(Aptr,Bptr);
+        }
+        else{
+//                return start_dot_product(Aptr,Bptr);
+
+            if(vector_storage[Aptr].length <=10000000){
+               return sse_inner(vector_storage[Aptr].num,vector_storage[Bptr].num,vector_storage[Aptr].length);
+            }
+            else {
+                if(vector_storage[Aptr].length <=15000000){
+                    return dotProduct(vector_storage[Aptr].num,vector_storage[Bptr].num,vector_storage[Aptr].length);
+                }
+                else{
+                    return thread_dot_product(Aptr,Bptr);
+                }
+            }
+        }
+
+    }
+    else{
+        cout << "The length of two vectors are not the same!" << endl;
+        cout << "Plz check your input!" << endl;
+        cout << "The output will be zero" << endl;
+        return 0;
+    }
+}
+
+/*void Test(int Aptr,int Bptr, int left , int gap,double& total){
+    int temp = 0;
+    while(temp != gap){
+    total += (double)vector_storage[Aptr].num[left+temp] * (double)vector_storage[Bptr].num[left+temp];
+    }
+}
+*/
+
+
+inline double sse_inner(const float* a, const float* b, unsigned int size)
+{
+        float z = 0.0f;
+        double fres = 0;
+        float ftmp[4] = { 0.0f, 0.0f, 0.0f, 0.0f };
+        __m128 mres;
+
+        if ((size / 4) != 0) {
+                mres = _mm_load_ss(&z);
+                for (unsigned int i = 0; i < size / 4; i++)
+                        mres = _mm_add_ps(mres, _mm_mul_ps(_mm_loadu_ps(&a[4*i]),
+                        _mm_loadu_ps(&b[4*i])));
+
+
+                __m128 mv1 = _mm_movelh_ps(mres, mres);
+                __m128 mv2 = _mm_movehl_ps(mres, mres);     //c,d,c,d
+                mres = _mm_add_ps(mv1, mv2);                //res[0],res[1]
+
+                _mm_store_ps(ftmp, mres);
+
+                fres = (double)ftmp[0] + (double)ftmp[1];
+        }
+
+        if ((size % 4) != 0) {
+                for (unsigned int i = size - size % 4; i < size; i++)
+                        fres += (double)a[i] * (double)b[i];
+        }
+
+        return fres;
+}
+
+
+
+
+
+
+
+inline double dotProduct(float* a, float* b , unsigned int size){
+    register double ret = 0.0,dot1 = 0.0, dot2 = 0.0, dot3 = 0.0 , dot4 = 0.0 , dot5 = 0.0 , dot6 = 0.0 , dot7 = 0.0 ,dot8 = 0.0;
+    for(unsigned i = 0 ; i < size/8; ++ i){
+        dot1 += a[8*i]*b[8*i];
+        dot2 += a[8*i+1]*b[8*i+1];
+        dot3 += a[8*i+2]*b[8*i+2];
+        dot4 += a[8*i+3]*b[8*i+3];
+        dot5 += a[8*i+4]*b[8*i+4];
+        dot6 += a[8*i+5]*b[8*i+5];
+        dot7 += a[8*i+6]*b[8*i+6];
+        dot8 += a[8*i+7]*b[8*i+7];
+    }
+    ret =dot1+dot2+dot3+dot4+dot5+dot6+dot7+dot8;
+    for(unsigned int i = size/8*8; i < size; ++ i){
+        ret +=a[i]*b[i];
+    }
+//    cout << "Here";
+    return ret;
+}
+
+
+
+
+
+
+inline double thread_dot_product(int Aptr,int Bptr){
+    int  thread_num = (thread::hardware_concurrency())*2/3;
+    if(vector_storage[Aptr].length > 90000000){
+        int  thread_num = (thread::hardware_concurrency())*1/2;
+    }
+    register int gap = vector_storage[Aptr].length/thread_num;
+    register int temp = -1;
+    register double total = 0;
+    thread threads[thread_num];
+    register int left = -gap;
+    double out[thread_num];
+    for(int i = 0; i < thread_num; i ++)
+            out[i] = 0;
+
+    while(temp != thread_num){
+        temp++;
+        if(temp == thread_num){
+            break;
+        }
+        left=left+gap;
+        cout << "gap" << gap<<endl;
+        cout <<"left" << left << endl;
+
+        threads[temp] = thread(Sum , ref(Aptr) , ref(Bptr) , ref(left) , ref(gap) , ref(out[temp]));
+    }
+
+
+
+    for (auto &thread : threads){
+        thread.join();
+    }
+    for(int i = 0; i < thread_num; i ++){
+            cout << out[i] << endl;
+            total+=out[i];
+    }
+
+    left = left+gap;
+    while(left < vector_storage[Aptr].length){
+        total += (double)vector_storage[Aptr].num[left] * (double)vector_storage[Bptr].num[left];
+        left++;
+    }
+
+    return total;
+
+}
+
+
+
+inline void Sum(int Aptr,int Bptr,int left , int gap , double& total){
+    register int temp = 0;
+    while(temp != gap){
+        total += (double)vector_storage[Aptr].num[left+temp] * (double)vector_storage[Bptr].num[left+temp];
+        temp++;
+    }
+
+}
+
+
+double start_dot_product(int Aptr,int Bptr){
+    double total = 0;
+    int ptr = 0;
+    while(ptr != vector_storage[Aptr].length){
+        total+=(double)vector_storage[Aptr].num[ptr] * (double)vector_storage[Bptr].num[ptr];
+//        cout << total << endl;
+        ptr++;
+    }
+    return total;
+}
+
+void storage_vector(string input){
+    int ptr = 0;
+    while(ptr != input.length()){
+
+        if(input.at(ptr) == '='){
+            break;
+        }
+        ptr++;
+    }
+
+    vector_storage[vector_storage_ptr].name = input.substr(0,ptr);
+    in_storage_vector(input.substr(ptr+1));
+}
+
+
+void in_storage_vector(string input){
+    int ptr = 0;
+    int count = nums_count(input);
+    int last = 0;
+    float *temp = new float[count];
+    int list_ptr = 0;
+
+    while(ptr < input.length()){
+
+        if(isdigit(input.at(ptr)) || input.at(ptr) == '-'){
+            last = ptr;
+
+            while(input.at(ptr) != ',' && input.at(ptr) != '}'){
+                ptr++;
+            }
+
+            temp[list_ptr] = atof(input.substr(last , ptr-last).c_str());
+            list_ptr++;
+        }
+        ptr++;
+    }
+
+    vector_storage[vector_storage_ptr].num = temp;
+    vector_storage[vector_storage_ptr].length = count;
+    vector_storage_ptr++;
+}
+
+
+int nums_count(string input){
+    int count = 0;
+    int ptr = 0;
+    while(ptr != input.length()){
+
+        if(input.at(ptr) == ','){
+            count++;
+        }
+
+        ptr++;
+    }
+    count++;
+    return count;
+}
+
+
+int search_vector(string input){
+    int ptr = 0;
+    while(ptr != vector_storage_ptr){
+
+        if(vector_storage[ptr].name == input){
+            return ptr;
+        }
+        ptr++;
+
+    }
+    return -1;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
