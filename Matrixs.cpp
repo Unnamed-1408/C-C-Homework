@@ -6,7 +6,7 @@
 #include <chrono>
 #include <immintrin.h>
 #include <cstdlib>
-#include "/usr/lib/gcc/x86_64-redhat-linux/10/include/omp.h"
+#include "omp.h"
 
 using namespace std;
 
@@ -126,6 +126,15 @@ void Test(){
         }
     }
 
+    while(cin.fail())
+    {
+        string num_input_string;
+        cin.clear();
+        cin>>num_input_string;
+        cout<<"Input something wrong, please restart"<<endl;
+        return;
+    }
+
     Matrix *output = Create_Matrix(a,b);
 
    auto start = std::chrono::steady_clock::now();
@@ -151,6 +160,7 @@ void Test(){
     cin >> endb;
     if(endb == "Y")
         output_Matrix(*output);
+    delete a,b,output;
 }
 
 
@@ -241,10 +251,6 @@ static inline void Matrix_Multiplication_order_try(Matrix* a, Matrix* b, Matrix*
         }
     }
 }
-
-
-
-
 
 
 static inline void Matrix_Multiplication_order_blocking(Matrix* a, Matrix* b, Matrix* output , size_t si, size_t sj, size_t sk){
